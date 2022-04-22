@@ -3,7 +3,7 @@ No
 """
 
 from typing import Any
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import configparser
 import discord
 
@@ -31,6 +31,7 @@ class CustomConfig(configparser.ConfigParser):
         self["discord"]["blocklist"] = map(int, str.split(self["discord"]["blocklist"], ","))
         self["discord"]["moderator_role"] = int(self["discord"]["moderator_role"])
 
+
 @dataclass
 class UserHistory:
     """
@@ -44,6 +45,33 @@ class UserHistory:
     def __getattr__(self, name: str) -> Any:
         return self.users[name]
 
+
+class ScanChannel():
+    # https://discordpy.readthedocs.io/en/stable/api.html#discord.TextChannel.history
+    """
+    yaya
+    """
+    def __init__(self, channel: discord.TextChannel, limit: int = 100, user_history: UserHistory = field(default_factory=UserHistory)) -> None:
+        self.channel = channel
+        self.current_message = None
+        self.limit = limit
+        self.user_history = user_history
+
+    def start_scan(self):
+        if not self.current_message:
+            self.current_message = self.channel.last_message
+        self.scan(self.current_message)# TODO replace with a method that keeps running repeatedly
+
+    def stop_scan(self):# TODO Destroy the object instead? This may not be necessary.
+        pass
+
+    def pause_scan(self):
+        pass
+
+    def scan(self, origin_message: discord.Message):
+        for message in self.channel.history(origin_message, limit=self.limit):
+            user_id = message.author.id
+            self.user_history[user_id] += 1
 
 class DiscordClient(discord.Client):
     """
@@ -95,6 +123,7 @@ class DiscordClient(discord.Client):
 
     async def _stop_scan_(self):
         pass
+
 
 if __name__ == "__main__":
     main()
