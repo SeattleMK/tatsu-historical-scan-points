@@ -13,7 +13,7 @@ def main():
     Main method, executes at start
     """
     config = CustomConfig()
-    config.read('config.ini')
+    config.read("config.ini")
     client = DiscordClient(config)
     client.run(config["discord"]["token"])
 
@@ -22,13 +22,16 @@ class CustomConfig(configparser.ConfigParser):
     """
     Modified ConfigParser to properly interpret the data of my config
     """
+
     def read(self, filenames: str, encoding: str = None):
         """
         Modified read methos to process values returned in the config instead of doing it later
         """
         configparser.ConfigParser.read(self, filenames, encoding)
         self["discord"]["guild"] = int(self["discord"]["guild"])
-        self["discord"]["blocklist"] = map(int, str.split(self["discord"]["blocklist"], ","))
+        self["discord"]["blocklist"] = map(
+            int, str.split(self["discord"]["blocklist"], ",")
+        )
         self["discord"]["moderator_role"] = int(self["discord"]["moderator_role"])
 
 
@@ -37,6 +40,7 @@ class UserHistory:
     """
     Stores each user's post count as a dataclass object
     """
+
     users: dict = {}
 
     def __setattr__(self, name: str, value: Any) -> None:
@@ -46,12 +50,18 @@ class UserHistory:
         return self.users[name]
 
 
-class ScanChannel():
+class ScanChannel:
     # https://discordpy.readthedocs.io/en/stable/api.html#discord.TextChannel.history
     """
     yaya
     """
-    def __init__(self, channel: discord.TextChannel, limit: int = 100, user_history: UserHistory = field(default_factory=UserHistory)) -> None:
+
+    def __init__(
+        self,
+        channel: discord.TextChannel,
+        limit: int = 100,
+        user_history: UserHistory = field(default_factory=UserHistory),
+    ) -> None:
         self.channel = channel
         self.current_message = None
         self.limit = limit
@@ -60,9 +70,11 @@ class ScanChannel():
     def start_scan(self):
         if not self.current_message:
             self.current_message = self.channel.last_message
-        self.scan(self.current_message)# TODO replace with a method that keeps running repeatedly
+        self.scan(
+            self.current_message
+        )  # TODO replace with a method that keeps running repeatedly
 
-    def stop_scan(self):# TODO Destroy the object instead? This may not be necessary.
+    def stop_scan(self):  # TODO Destroy the object instead? This may not be necessary.
         pass
 
     def pause_scan(self):
@@ -71,13 +83,17 @@ class ScanChannel():
     def scan(self, origin_message: discord.Message):
         for message in self.channel.history(origin_message, limit=self.limit):
             user_id = message.author.id
+            if not user_id in self.user_history:
+                self.user_history[user_id] = 0
             self.user_history[user_id] += 1
+
 
 class DiscordClient(discord.Client):
     """
     Modified discord.Client for the purpose of scanning for user messages across several channels
     of a discord.Guild
     """
+
     async def __init__(self, config: configparser.ConfigParser):
         discord.Client.__init__(self)
         self.history_config = config
@@ -113,7 +129,9 @@ class DiscordClient(discord.Client):
                     case "pause":
                         await self._pause_scan_()
                     case _:
-                        await message.channel.send("Please specify an option: on, off, pause")
+                        await message.channel.send(
+                            "Please specify an option: on, off, pause"
+                        )
 
     async def _start_scan_(self):
         pass
