@@ -2,8 +2,10 @@
 No
 """
 
+import json
 from configparser import ConfigParser
 from dataclasses import field
+from collections import Counter
 import discord
 from customconfig import CustomConfig
 from scanchannel import ScanChannel
@@ -75,7 +77,14 @@ class DiscordClient(discord.Client):
                     )
 
     async def _start_scan_(self):
-        print("start")
+        final_results = Counter({})
+        blocklist = self.history_config.storage["discord"]["blocklist"]
+        for channel in self.guild.channels:
+            if not channel.id in blocklist and isinstance(channel, discord.TextChannel):
+                scanner = ScanChannel(channel)
+                await scanner.start_scan()
+                final_results += Counter(scanner.user_history)
+        print(json.dumps(final_results))
 
     async def _pause_scan_(self):
         print("pause")
