@@ -32,17 +32,21 @@ class ScanChannel:
         start_message = None
         end_message = None
         reached_end = False
+        scan_total = 0
         while not reached_end:
+            print(f"Scanned {scan_total} messages in {self.channel.name}", end="\r")
             if end_message:
                 start_message = end_message
             end_message = await self.scan(start_message)
+            scan_total += 100
             if end_message == start_message:
                 reached_end = True
                 print("done with scan")
+        
 
     async def scan(self, start_message: discord.Message = None) -> discord.Message:
         last_message = None
-        async for message in self.channel.history(after=start_message):
+        async for message in self.channel.history(before=start_message):
             if message.author.bot:
                 continue
             author_id = message.author.id
